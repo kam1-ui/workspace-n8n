@@ -1,0 +1,356 @@
+{
+  "name": "Transcription Video - Gemini - Whisper",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "transcribe",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 400],
+      "webhookId": "transcribe-youtube"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nconst youtubeUrl = body.youtube_url || body.url || body.youtube || body.input_url;\nlet useGemini = true;\n\nif (body.method !== undefined) {\n  const m = body.method;\n  if (Array.isArray(m)) {\n    const lowered = m.map(x => String(x).toLowerCase());\n    if (lowered.includes('whisper') && !lowered.includes('gemini')) {\n      useGemini = false;\n    } else if (lowered.includes('gemini') && !lowered.includes('whisper')) {\n      useGemini = true;\n    } else {\n      useGemini = true;\n    }\n  } else {\n    const ms = String(m).toLowerCase();\n    useGemini = (ms === 'gemini' || ms === 'true' || ms === '1' || ms === 'yes');\n  }\n} else if (body.use_gemini !== undefined) {\n  const ug = body.use_gemini;\n  if (typeof ug === 'boolean') {\n    useGemini = ug;\n  } else {\n    const s = String(ug).toLowerCase();\n    useGemini = (s === 'true' || s === '1' || s === 'yes' || s === 'gemini');\n  }\n}\n\nif (!youtubeUrl) {\n  throw new Error('URL YouTube manquante');\n}\n\nconst youtubeRegex = /(?:youtube\\.com\\/(?:[^\\/]+\\/.+\\/|(?:v|e(?:mbed)?)\\/|.*[?&]v=)|youtu\\.be\\/)([^\"&?\\/ ]{11})/;\nconst match = youtubeUrl.match(youtubeRegex);\n\nif (!match || !match[1]) {\n  throw new Error('URL YouTube invalide');\n}\n\nreturn [{\n  json: {\n    youtube_url: youtubeUrl,\n    video_id: match[1],\n    use_gemini: useGemini,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "extract-id-001",
+      "name": "Extraire Video ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "outputKey": "Gemini",
+              "conditions": {
+                "options": { "version": 2 },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": { "type": "boolean", "operation": "true" },
+                    "leftValue": "={{ $json.use_gemini }}"
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Whisper",
+              "conditions": {
+                "options": { "version": 2 },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": { "type": "boolean", "operation": "false" },
+                    "leftValue": "={{ $json.use_gemini }}"
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-001",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const { execSync } = require('child_process');\nconst videoId = $input.first().json.video_id;\nconst youtubeUrl = $input.first().json.youtube_url;\n\nconst command = `cd /tmp && /home/ne0rignr/.local/bin/yt-dlp -f 'best[ext=mp4]' -o '${videoId}.mp4' '${youtubeUrl}' 2>&1`;\nconst output = execSync(command, { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 });\n\nreturn [{\n  json: {\n    video_id: videoId,\n    youtube_url: youtubeUrl,\n    video_path: `/tmp/${videoId}.mp4`,\n    method: 'gemini'\n  }\n}];"
+      },
+      "id": "download-gemini-001",
+      "name": "Download Video (Gemini)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const fs = require('fs');\nconst videoId = $input.first().json.video_id;\nconst videoPath = $input.first().json.video_path;\n\nconst videoBuffer = fs.readFileSync(videoPath);\nconst videoBase64 = videoBuffer.toString('base64');\n\nreturn [{\n  json: {\n    video_id: videoId,\n    video_path: videoPath,\n    method: 'gemini'\n  },\n  binary: {\n    video: {\n      data: videoBase64,\n      mimeType: 'video/mp4',\n      fileName: `${videoId}.mp4`\n    }\n  }\n}];"
+      },
+      "id": "read-video-gemini-001",
+      "name": "Read Video (Gemini)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/upload/v1beta/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "inputDataFieldName": "video",
+              "parameterType": "formBinaryData"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Goog-Upload-Protocol", "value": "multipart" }
+          ]
+        },
+        "options": { "timeout": 600000 }
+      },
+      "id": "upload-gemini-001",
+      "name": "Upload to Gemini Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "gemini-api-key",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const uploadResponse = $input.first().json;\nconst videoId = $('Read Video (Gemini)').first().json.video_id;\n\nif (!uploadResponse.file || !uploadResponse.file.uri) {\n  throw new Error('Upload failed: ' + JSON.stringify(uploadResponse));\n}\n\nconst fileUri = uploadResponse.file.uri;\n\nreturn [{\n  json: {\n    video_id: videoId,\n    file_uri: fileUri,\n    file_name: uploadResponse.file.name,\n    method: 'gemini'\n  }\n}];"
+      },
+      "id": "parse-upload-001",
+      "name": "Parse Upload Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ {\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"text\": \"Transcris cette vidéo en français. Retourne uniquement le texte de la transcription, sans aucun formatage ni commentaire.\"\n      },\n      {\n        \"fileData\": {\n          \"mimeType\": \"video/mp4\",\n          \"fileUri\": $json.file_uri\n        }\n      }\n    ]\n  }]\n} }}",
+        "options": { "timeout": 600000 }
+      },
+      "id": "gemini-api-001",
+      "name": "Gemini 2.0 Flash",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1650, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "gemini-api-key",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nconst videoId = $('Parse Upload Response').first().json.video_id;\n\nlet transcriptionText = '';\n\nif (response.candidates && response.candidates[0]) {\n  const content = response.candidates[0].content;\n  if (content && content.parts) {\n    transcriptionText = content.parts.map(p => p.text).join('');\n  }\n}\n\nif (!transcriptionText) {\n  throw new Error('Pas de transcription reçue de Gemini');\n}\n\nreturn [{\n  json: {\n    video_id: videoId,\n    transcription: transcriptionText,\n    method: 'gemini',\n    text_length: transcriptionText.length\n  }\n}];"
+      },
+      "id": "parse-gemini-001",
+      "name": "Parse Gemini Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const { execSync } = require('child_process');\nconst videoId = $input.first().json.video_id;\nconst youtubeUrl = $input.first().json.youtube_url;\n\nconst command = `cd /tmp && /home/ne0rignr/.local/bin/yt-dlp -f 'best[ext=mp4]' -o '${videoId}.mp4' '${youtubeUrl}' 2>&1`;\nconst output = execSync(command, { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 });\n\nreturn [{\n  json: {\n    video_id: videoId,\n    youtube_url: youtubeUrl,\n    video_path: `/tmp/${videoId}.mp4`,\n    method: 'whisper'\n  }\n}];"
+      },
+      "id": "download-whisper-001",
+      "name": "Download Video (Whisper)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 500]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const { execSync } = require('child_process');\nconst videoId = $input.first().json.video_id;\nconst videoPath = $input.first().json.video_path;\n\nconst command = `/home/ne0rignr/.local/bin/ffmpeg -i \"${videoPath}\" -vn -ar 16000 -ac 1 -b:a 64k -y \"/tmp/${videoId}.mp3\" 2>&1`;\nconst output = execSync(command, { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 });\n\nreturn [{\n  json: {\n    video_id: videoId,\n    audio_path: `/tmp/${videoId}.mp3`,\n    method: 'whisper'\n  }\n}];"
+      },
+      "id": "extract-audio-001",
+      "name": "Extract Audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const fs = require('fs');\nconst videoId = $input.first().json.video_id;\nconst audioPath = $input.first().json.audio_path;\n\nconst audioBuffer = fs.readFileSync(audioPath);\nconst audioBase64 = audioBuffer.toString('base64');\n\nreturn [{\n  json: {\n    video_id: videoId,\n    method: 'whisper'\n  },\n  binary: {\n    data: {\n      data: audioBase64,\n      mimeType: 'audio/mpeg',\n      fileName: `${videoId}.mp3`\n    }\n  }\n}];"
+      },
+      "id": "read-audio-001",
+      "name": "Read Audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:9000/transcribe",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "inputDataFieldName": "data",
+              "parameterType": "formBinaryData"
+            },
+            { "name": "language", "value": "fr" }
+          ]
+        },
+        "options": { "timeout": 3600000 }
+      },
+      "id": "whisper-api-001",
+      "name": "Whisper API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1450, 500]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nconst videoId = $('Read Audio').first().json.video_id;\n\nconst transcriptionText = response.text || response.transcription || '';\n\nif (!transcriptionText) {\n  throw new Error('Pas de transcription reçue de Whisper');\n}\n\nreturn [{\n  json: {\n    video_id: videoId,\n    transcription: transcriptionText,\n    method: 'whisper',\n    text_length: transcriptionText.length\n  }\n}];"
+      },
+      "id": "parse-whisper-001",
+      "name": "Parse Whisper Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 500]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\n\nconst data = $input.first().json;\nconst videoId = data.video_id;\nconst transcriptionText = data.transcription;\nconst method = data.method;\n\nconst baseDir = '/home/ne0rignr/workspace-serveur/transcriptions';\nconst outputDir = path.join(baseDir, videoId);\n\nif (!fs.existsSync(outputDir)) {\n  fs.mkdirSync(outputDir, { recursive: true });\n}\n\nconst transcriptionPath = path.join(outputDir, 'transcription_brute.txt');\nfs.writeFileSync(transcriptionPath, transcriptionText);\n\nconst metadata = {\n  video_id: videoId,\n  youtube_url: $('Extraire Video ID').first().json.youtube_url,\n  transcription_method: method,\n  transcription_date: new Date().toISOString(),\n  text_length: transcriptionText.length\n};\n\nconst metadataPath = path.join(outputDir, 'metadata.json');\nfs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));\n\nreturn [{\n  json: {\n    video_id: videoId,\n    method: method,\n    output_dir: outputDir,\n    transcription_path: transcriptionPath,\n    metadata_path: metadataPath,\n    text_length: transcriptionText.length\n  }\n}];"
+      },
+      "id": "save-files-001",
+      "name": "Save Files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2050, 400]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const { execSync } = require('child_process');\nconst videoId = $input.first().json.video_id;\n\ntry {\n  execSync(`rm -f /tmp/${videoId}.mp4 /tmp/${videoId}.mp3`, { encoding: 'utf-8' });\n  return [{\n    json: {\n      ...$input.first().json,\n      cleanup_success: true\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      ...$input.first().json,\n      cleanup_success: false\n    }\n  }];\n}"
+      },
+      "id": "cleanup-001",
+      "name": "Cleanup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2250, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"message\": \"Transcription terminée\",\n  \"video_id\": $json.video_id,\n  \"method\": $json.method,\n  \"output_directory\": $json.output_dir,\n  \"text_length\": $json.text_length,\n  \"cleanup_success\": $json.cleanup_success\n} }}",
+        "options": {}
+      },
+      "id": "response-001",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2450, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Extraire Video ID", "type": "main", "index": 0 }]]
+    },
+    "Extraire Video ID": {
+      "main": [[{ "node": "Switch", "type": "main", "index": 0 }]]
+    },
+    "Switch": {
+      "main": [
+        [{ "node": "Download Video (Gemini)", "type": "main", "index": 0 }],
+        [{ "node": "Download Video (Whisper)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Download Video (Gemini)": {
+      "main": [[{ "node": "Read Video (Gemini)", "type": "main", "index": 0 }]]
+    },
+    "Read Video (Gemini)": {
+      "main": [
+        [{ "node": "Upload to Gemini Files", "type": "main", "index": 0 }]
+      ]
+    },
+    "Upload to Gemini Files": {
+      "main": [
+        [{ "node": "Parse Upload Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Upload Response": {
+      "main": [[{ "node": "Gemini 2.0 Flash", "type": "main", "index": 0 }]]
+    },
+    "Gemini 2.0 Flash": {
+      "main": [
+        [{ "node": "Parse Gemini Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Gemini Response": {
+      "main": [[{ "node": "Save Files", "type": "main", "index": 0 }]]
+    },
+    "Download Video (Whisper)": {
+      "main": [[{ "node": "Extract Audio", "type": "main", "index": 0 }]]
+    },
+    "Extract Audio": {
+      "main": [[{ "node": "Read Audio", "type": "main", "index": 0 }]]
+    },
+    "Read Audio": {
+      "main": [[{ "node": "Whisper API", "type": "main", "index": 0 }]]
+    },
+    "Whisper API": {
+      "main": [
+        [{ "node": "Parse Whisper Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Whisper Response": {
+      "main": [[{ "node": "Save Files", "type": "main", "index": 0 }]]
+    },
+    "Save Files": {
+      "main": [[{ "node": "Cleanup", "type": "main", "index": 0 }]]
+    },
+    "Cleanup": {
+      "main": [[{ "node": "Response", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

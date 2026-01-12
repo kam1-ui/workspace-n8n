@@ -1,0 +1,60 @@
+
+Used 1 reference
+Voici un prompt prêt à copier/coller pour demander toutes les informations nécessaires afin d’adapter les options (ports, firewall, VPN, méthode de démarrage n8n, reverse proxy, etc.) sans conflit. Demandez au destinataire de répondre en collant les sorties des commandes demandées et les chemins de fichiers.
+
+Prompt (à envoyer)
+Merci — pour que je puisse proposer des options sûres et adaptées à votre installation n8n, fournissez les informations ci‑dessous. Ne modifiez rien pour l’instant : copiez/collez les sorties des commandes demandées et les chemins/fichiers indiqués.
+
+Contexte général
+Où tourne n8n ? (choisir) : VPS distant / PC Windows local / container Docker / autre (précisez).
+IP publique ou nom de domaine du serveur (si applicable).
+Accès : SSH disponible (oui/non) ? Utilisateur avec sudo (oui/non) ?
+Objectif d’accès : local seulement / LAN / Internet public (expliquer).
+Méthode de lancement de n8n
+Comment démarrez‑vous n8n habituellement ? (npx n8n start / systemd service / pm2 / docker-compose / docker run / autre)
+Si service systemd/pm2/docker, précisez le nom de service ou le fichier de configuration.
+Ports et host actuels (prévenir conflits)
+Valeurs actuelles (si connues) : N8N_HOST, N8N_PORT.
+Ports à ne PAS utiliser (par contraintes réseau ou applicatives).
+Liste des services déjà à l’écoute (copier/collez les sorties suivantes) :
+Linux (sur le VPS) :
+ss -tuln
+ps aux | egrep 'n8n|node'
+sudo systemctl status n8n (si systemd)
+docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Ports}}\t{{.Names}}" (si docker)
+pm2 list (si pm2)
+sudo ufw status verbose ou sudo iptables -L -n -v
+Windows (si applicable) — collez les sorties :
+Get-Process | Where-Object { $_.ProcessName -match 'node|n8n' }
+netstat -ano | findstr LISTENING
+Get-NetTCPConnection -LocalPort 5678 (ou port n8n)
+Get-NetFirewallRule | Where-Object {$_.DisplayName -like 'n8n'} (si existant)
+Firewall / NAT / VPN
+Indiquez si le serveur a un firewall (ufw/iptables/firewalld/Windows Firewall). Collez la sortie de la commande de statut ci‑dessus.
+Utilisez‑vous NordVPN ou autre client VPN sur la machine où vous testez le formulaire ? (oui/non). Si oui, activez “Allow LAN traffic” ou précisez s’il faut éviter tout changement VPN.
+Y a‑t‑il un reverse proxy (nginx / traefik / Caddy) devant n8n ? Fournissez le fichier de config ou la sortie de docker/ports.
+Reverse proxy / TLS / domaine
+Si vous souhaitez accès public : possédez‑vous un domaine et TLS (certbot/letsencrypt) ? Fournir l’URL souhaitée.
+Indiquez si vous préférez exposer via ngrok (temporaire) plutôt que modifier firewall/VPN.
+Dépendances et chemins
+yt-dlp, ffmpeg, autres dépendances : sont‑ils installés ? which yt-dlp, which ffmpeg.
+Emplacement de sortie attendu (chemin où les transcriptions sont écrites) : p.ex. /home/user/transcriptions — vérifier que l’utilisateur qui lance n8n a les droits d’écriture.
+Fichiers / logs / workflow
+Exportez et joignez le JSON du workflow actuellement actif (menu → Export) ou collez le chemin du fichier JSON local.
+Joindre les logs n8n récents (ou collez 50 dernières lignes) : p.ex. journal systemd sudo journalctl -u n8n -n 50 ou fichier de log.
+Contraintes & sécurité
+Interdictions absolues (ex : ne pas ouvrir de ports >80/443, ne pas exposer clés API).
+Politique de rotation des clés / stockage des credentials (où stocker Gemini API key ? vault / environment ?).
+Format de réponse souhaité (copier‑coller)
+Indiquer en tête : Hébergeur: [VPS|Windows|Docker], IP/Domaine: [...], Méthode démarrage: [...], Accès SSH: [oui/non]
+Coller les sorties des commandes demandées (séparer par balises), ex :
+--- ss -tuln ---
+(sortie)
+--- ps aux | grep n8n ---
+(sortie)
+Joindre le JSON exporté du workflow ou fournir le chemin du fichier.
+Merci — avec ces informations je pourrai :
+
+proposer la meilleure option (ouvrir le port, modifier N8N_HOST, config ngrok, config reverse proxy) en évitant tout conflit de ports,
+préparer les commandes exactes et persistantes (systemd/pm2/docker) à exécuter et les changements firewall à appliquer.
+Souhaitez‑vous que je traduise ce prompt pour un technicien non‑francophone (anglais) ?

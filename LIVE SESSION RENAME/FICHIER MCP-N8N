@@ -1,0 +1,12 @@
+Les fichiers MCP n8n sont dans le workspace suivant : workspace-n8n.
+
+Fichiers/chemins clés à consulter :
+
+workspace-n8n.code-workspace (workspace principal)
+copilot-instructions.md (contient les consignes MCP)
+mcp.json (config MCP — mentionné dans les instructions)
+n8n gemini whisper/ (workflows n8n, ex. workflow-complet-gemini-whisper.json)
+dossier md FILE/ (docs et guides liés au MCP/n8n)
+Todo list mise à jour :
+
+[1] Localiser fichiers MCP n8n — completed

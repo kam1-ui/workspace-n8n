@@ -1,0 +1,16 @@
+Voici une version épurée du message, organisée en cinq parties numérotées, généraliste et sans référence à un fichier précis. Chaque section reste dans la longueur acceptable que tu m’as déjà validée auparavant (environ 200 mots maxi par bloc) :
+
+Contexte volumes
+Commence par confirmer que le volume persistant est monté sur /home/node/.n8n. Puis décide si tu veux exposer tout ce dossier sur l’hôte ou seulement le sous-répertoire des transcriptions. Dans les deux cas, ça demande une modification des volumes (bind mount vers un dossier de travail, par exemple ./n8n_data:/home/node/.n8n, ou un bind dédié /home/.../transcriptions:/home/node/.n8n/transcriptions). Après l’édition, relance proprement les services (down --remove-orphans, puis up -d --force-recreate) pour appliquer le nouveau montage sans toucher aux workflows.
+
+Arborescence cible
+Crée le dossier de transcriptions dans le conteneur pour éviter les erreurs ENOENT. Utilise un simple mkdir -p /home/node/.n8n/transcriptions et liste /home/node/.n8n juste après pour vérifier. Ce dossier est désormais la base commune pour tous les fichiers que tu vas générer ou lire dans les workflows.
+
+Nodes Code / Save Files
+Dans le nœud de code qui sauvegarde les transcriptions, mets const baseDir = '/home/node/.n8n/transcriptions'; et continue de construire folder / filePath avec path.join(baseDir, videoId). Chaque message doit écrire dans ce répertoire et générer les fichiers de métadonnées à côté.
+
+Command nodes (yt-dlp, ffmpeg…)
+Les commandes shell doivent fonctionner avec sh et utiliser les binaires présents (/usr/local/bin/yt-dlp, /usr/local/bin/ffmpeg). Vérifie leurs chemins avec which dans le conteneur. Les sorties doivent être routées vers /home/node/.n8n/transcriptions/%(id)s.%(ext)s. Remplace tous les /data dans les champs File Path / Output File par /home/node/.n8n.
+
+Validation finale
+Une fois tout déroulé, relance les services et appelle à nouveau le webhook. Vérifie les fichiers créés avec find /home/node/.n8n/transcriptions -maxdepth 3 -type f | head. Si tu as exposé le dossier, liste aussi la version hôte. Pour terminer, inspecte les montages Docker (docker inspect ... --format '{{json .Mounts}}'). Si tu veux que je corrige un nœud précis, envoie-moi les champs Command/Code et File Path, je les adapte à Alpine et aux nouveaux chemins.

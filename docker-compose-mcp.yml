@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  n8n-mcp:
+    image: node:20-alpine
+    container_name: n8n-mcp-server
+    working_dir: /app
+    command: >
+      sh -c "npm install -g n8n-mcp && n8n-mcp"
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env.mcp
+    environment:
+      # Mode HTTP
+      - MCP_MODE=http
+      - USE_FIXED_HTTP=true
+
+      # Les variables ci-dessous sont surchargées depuis .env.mcp
+      # AUTH_TOKEN, N8N_API_KEY, N8N_API_URL, etc.
+
+      # Configuration additionnelle
+      - PORT=3000
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+      - TRUST_PROXY=1
+
+    networks:
+      - root_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n-mcp.rule=Host(`mcp.chnnlcrypto.cloud`)"
+      - "traefik.http.routers.n8n-mcp.entrypoints=websecure"
+      - "traefik.http.routers.n8n-mcp.tls=true"
+      - "traefik.http.routers.n8n-mcp.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.n8n-mcp.loadbalancer.server.port=3000"
+
+      # Redirection HTTP vers HTTPS
+      - "traefik.http.routers.n8n-mcp-http.rule=Host(`mcp.chnnlcrypto.cloud`)"
+      - "traefik.http.routers.n8n-mcp-http.entrypoints=web"
+      - "traefik.http.routers.n8n-mcp-http.middlewares=redirect-to-https"
+
+    restart: unless-stopped
+
+networks:
+  root_default:
+    external: true

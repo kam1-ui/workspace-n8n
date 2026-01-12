@@ -1,0 +1,152 @@
+{
+  "name": "Transcription Video - Gemini - Whisper",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "transcribe",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 400],
+      "webhookId": "transcribe-youtube"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nconst youtubeUrl = body.youtube_url || body.url || body.youtube || body.input_url;\nlet useGemini = true;\n\nif (body.method !== undefined) {\n  const m = body.method;\n  if (Array.isArray(m)) {\n    const lowered = m.map(x => String(x).toLowerCase());\n    if (lowered.includes('whisper') && !lowered.includes('gemini')) {\n      useGemini = false;\n    } else if (lowered.includes('gemini') && !lowered.includes('whisper')) {\n      useGemini = true;\n    } else {\n      useGemini = true;\n    }\n  } else {\n    const ms = String(m).toLowerCase();\n    useGemini = (ms === 'gemini' || ms === 'true' || ms === '1' || ms === 'yes');\n  }\n} else if (body.use_gemini !== undefined) {\n  const ug = body.use_gemini;\n  if (typeof ug === 'boolean') {\n    useGemini = ug;\n  } else {\n    const s = String(ug).toLowerCase();\n    useGemini = (s === 'true' || s === '1' || s === 'yes' || s === 'gemini');\n  }\n}\n\nif (!youtubeUrl) {\n  throw new Error('URL YouTube manquante');\n}\n\nconst youtubeRegex = /(?:youtube\\.com\\/(?:[^\\/]+\\/.+\\/|(?:v|e(?:mbed)?)\\/|.*[?&]v=)|youtu\\.be\\/)([^\"&?\\ ]{11})/;\nconst match = youtubeUrl.match(youtubeRegex);\n\nif (!match || !match[1]) {\n  throw new Error('URL YouTube invalide');\n}\n\nreturn [{\n  json: {\n    youtube_url: youtubeUrl,\n    video_id: match[1],\n    use_gemini: useGemini,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "extract-id-001",
+      "name": "Extraire Video ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "outputKey": "Gemini",
+              "conditions": {
+                "options": { "version": 2 },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": { "type": "boolean", "operation": "true" },
+                    "leftValue": "={{ $json.use_gemini }}"
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Whisper",
+              "conditions": {
+                "options": { "version": 2 },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": { "type": "boolean", "operation": "false" },
+                    "leftValue": "={{ $json.use_gemini }}"
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-001",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const { execSync } = require('child_process');\nconst videoId = $input.first().json.video_id;\nconst youtubeUrl = $input.first().json.youtube_url;\n\nconst command = `cd /tmp && /home/ne0rignr/.local/bin/yt-dlp -f 'best[ext=mp4]' -o '${videoId}.mp4' '${youtubeUrl}' 2>&1`;\nconst output = execSync(command, { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 });\n\nreturn [{\n  json: {\n    video_id: videoId,\n    youtube_url: youtubeUrl,\n    video_path: `/tmp/${videoId}.mp4`,\n    method: 'gemini'\n  }\n}];"
+      },
+      "id": "download-gemini-001",
+      "name": "Download Video (Gemini)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const fs = require('fs');\nconst videoId = $input.first().json.video_id;\nconst videoPath = $input.first().json.video_path;\n\nconst videoBuffer = fs.readFileSync(videoPath);\nconst videoBase64 = videoBuffer.toString('base64');\n\nreturn [{\n  json: {\n    video_id: videoId,\n    video_path: videoPath,\n    method: 'gemini'\n  },\n  binary: {\n    video: {\n      data: videoBase64,\n      mimeType: 'video/mp4',\n      fileName: `${videoId}.mp4`\n    }\n  }\n}];"
+      },
+      "id": "read-video-gemini-001",
+      "name": "Read Video (Gemini)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/upload/v1beta/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "inputDataFieldName": "video",
+              "parameterType": "formBinaryData"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Goog-Upload-Protocol", "value": "multipart" }
+          ]
+        },
+        "options": { "timeout": 600000 }
+      },
+      "id": "upload-gemini-001",
+      "name": "Upload to Gemini Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "gemini-api-key",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const uploadResponse = $input.first().json;\nconst videoId = $('Read Video (Gemini)').first().json.video_id;\n\nif (!uploadResponse.file || !uploadResponse.file.uri) {\n  throw new Error('Upload failed: ' + JSON.stringify(uploadResponse));\n}\n\nconst fileUri = uploadResponse.file.uri;\n\nreturn [{\n  json: {\n    video_id: videoId,\n    file_uri: fileUri,\n    file_name: uploadResponse.file.name,\n    method: 'gemini'\n  }\n}];"
+      },
+      "id": "parse-upload-001",
+      "name": "Parse Upload Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+      ... (file truncated for backup)
+}

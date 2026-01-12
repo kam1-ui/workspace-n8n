@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcription YouTube - Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="url"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .radio-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .radio-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .radio-option label {
+            display: block;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
+        .radio-option label:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .result pre {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .webhook-config {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .webhook-config code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+
+        .examples {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .examples a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .examples a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Transcription YouTube</h1>
+        <p class="subtitle">Testez le workflow Gemini + Whisper</p>
+
+        <div class="webhook-config">
+            <strong>URL du webhook :</strong> <code id="webhookUrl">https://n8n.chnnlcrypto.cloud/webhook/transcribe</code>
+            <br>
+            <small>Modifiez dans le code si nécessaire</small>
+        </div>
+
+        <form id="transcriptionForm">
+            <div class="form-group">
+                <label for="youtubeUrl">URL YouTube ou Playlist</label>
+                <input
+                    type="url"
+                    id="youtubeUrl"
+                    name="youtube_url"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    required
+                >
+                <div class="examples">
+                    Exemples :
+                    <a href="#" onclick="setExample('https://www.youtube.com/watch?v=dQw4w9WgXcQ'); return false;">Vidéo simple</a> |
+                    <a href="#" onclick="setExample('https://www.youtube.com/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf'); return false;">Playlist</a>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Méthode de transcription (1 maximum)</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="methodWhisper" name="method" value="whisper" checked>
+                        <label for="methodWhisper">
+                            🎤 Whisper
+                            <br><small style="opacity: 0.8;">Local</small>
+                        </label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="methodGemini" name="method" value="gemini">
+                        <label for="methodGemini">
+                            ✨ Gemini 2.0
+                            <br><small style="opacity: 0.8;">Cloud</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                Lancer la transcription
+            </button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Configuration - Modifiez cette URL selon votre installation n8n
+        const WEBHOOK_URL = 'https://n8n.chnnlcrypto.cloud/webhook/transcribe';
+
+        document.getElementById('webhookUrl').textContent = WEBHOOK_URL;
+
+        function setExample(url) {
+            document.getElementById('youtubeUrl').value = url;
+        }
+
+        document.getElementById('transcriptionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+
+            // Récupérer les données du formulaire
+            const youtubeUrl = document.getElementById('youtubeUrl').value;
+            const method = document.querySelector('input[name="method"]:checked').value;
+
+            // Désactiver le bouton et afficher le spinner
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Transcription en cours...';
+
+            // Masquer les résultats précédents
+            resultDiv.style.display = 'none';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        youtube_url: youtubeUrl,
+                        method: method
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Transcription réussie !</h3>
+                        <p><strong>Vidéo ID :</strong> ${data.video_id}</p>
+                        <p><strong>Méthode :</strong> ${data.method}</p>
+                        <p><strong>Longueur :</strong> ${data.text_length} caractères</p>
+                        <p><strong>Dossier :</strong> <code>${data.output_directory}</code></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Erreur inconnue');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Erreur</h3>
+                    <p>${error.message}</p>
+                    <p><small>Vérifiez que n8n est en cours d'exécution et que le workflow est activé.</small></p>
+                `;
+            } finally {
+                // Réactiver le bouton
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Lancer la transcription';
+
+                // Afficher le résultat
+                resultDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

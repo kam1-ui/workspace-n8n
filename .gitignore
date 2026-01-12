@@ -1,0 +1,23 @@
+# Secrets et credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+.env.mcp
+*.token
+credentials.json
+
+# VS Code local
+.vscode/settings.json
+.vscode/*.local.json
+
+# Logs
+*.log
+logs/
+
+# Node modules (si nécessaire)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

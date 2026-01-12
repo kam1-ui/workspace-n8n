@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "workspace-n8n"
+    }
+  ],
+  "settings": {
+    "files.autoSave": "afterDelay",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "extensions": {
+    "recommendations": [
+      "anthropic.claude-code",
+      "esbenp.prettier-vscode"
+    ]
+  }
+}

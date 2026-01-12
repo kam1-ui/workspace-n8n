@@ -1,0 +1,66 @@
+Exécution terminée — voici un résumé clair et court des sorties (j'ai exécuté les commandes demandées depuis ne0rignr).
+
+Sorties clés
+
+Écoute réseaux (ss -tuln) — ports ouverts remarqués :
+
+Redis (redirigé) : 16379
+PostgreSQL (redirigé) : 15432
+InfluxDB exposé : 18086 -> 8086
+Ollama : 11434
+HTTP/HTTPS : 80, 443
+Whisper API : 9000
+SSH : 22
+Processus n8n / node :
+
+Plusieurs processus node en cours ; n8n tourne sous /usr/local/bin/n8n (processus utilisateur ubuntu)
+Autres processus node : local dev servers (VS Code server), vite, etc.
+Whisper API Python process présent (/opt/whisper-api/server.py)
+Docker (conteneurs en marche) — colonnes: CONTAINER ID | IMAGE | PORTS | NAMES
+
+Plusieurs conteneurs n8n / n8n workers
+Traefik présent (ports 80/443 exposés)
+Postgres, Redis, InfluxDB containers listés
+Divers conteneurs workspace-dev (dashboard, voice-to-text, influxdb, postgres, redis)
+systemd / journaux :
+
+systemctl status n8n -> Unit n8n.service introuvable (n8n n'est pas installé en tant que service systemd ici)
+journalctl -u n8n -n 50 -> aucune entrée visible (droits restreints ou service non géré par systemd)
+pm2 : non installé (commande introuvable)
+
+Firewall :
+
+sudo -n ufw status n'a pas retourné (sudo -n échoué) ; j'ai demandé iptables en fallback mais sortie vide (pas d'erreur). Vous avez accès root via sudo mais la commande interactive a été évitée.
+Réseau / host :
+
+IPs locales et publiques : 72.60.175.177 plus plusieurs interfaces Docker (172.17.0.1, 172.18.0.1, ...)
+Utilisateur courant :
+
+User : ne0rignr (appartient aux groupes sudo et docker)
+Fichiers .env trouvés (chemins)
+
+.env
+.env
+.env.production
+.env.example
+.env
+.env.example
+.env
+.env.example
+docker-compose trouvés
+
+docker-compose.yml
+docker-compose-n8n-fixed.yml
+Observations et recommandations rapides
+
+n8n semble être lancé directement via Node (pas systemd ni pm2). Vérifiez comment il est démarré (script, docker, ou via système root-n8n-1 container listé).
+Traefik est actif et expose 80/443 — c'est probablement le reverse proxy devant n8n (vérifier la config traefik).
+Plusieurs .env existent — ils contiennent les secrets de vos services : ne les commitez pas. Assurez-vous d'avoir une copie sécurisée (vault).
+Si vous voulez exposer n8n publiquement, la meilleure méthode ici est via Traefik + TLS (Let's Encrypt) déjà présent ; je peux préparer la configuration exacte si vous confirmez domaine/TLS.
+Pour obtenir l'état complet des logs systemd sans avertissement de permission, exécutez la commande en sudo (ou ajoutez votre user au groupe adm / systemd-journal si souhaité).
+Souhaitez-vous maintenant que je :
+
+collecte et affiche les 50 dernières lignes des logs n8n (via docker logs pour le conteneur n8n), ou
+cherche le fichier de démarrage exact d'où n8n est lancé (script / container / service), ou
+prépare la configuration Traefik/nginx pour exposer n8n avec TLS (pré-rempli), ou
+rien 

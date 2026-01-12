@@ -1,0 +1,155 @@
+version: "3.8"
+
+services:
+  # Redis pour le mode queue (worker)
+  redis:
+    image: redis:7-alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Base de données PostgreSQL pour n8n
+  postgres:
+    image: postgres:15
+    container_name: n8n-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - /root/postgres-data:/var/lib/postgresql/data
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # n8n version 1.88.0 (première version avec MCP)
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:1.123.6
+    container_name: n8n-main
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT}:5678"
+    environment:
+      - DB_TYPE=${DB_TYPE}
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT=${DB_POSTGRESDB_PORT}
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
+
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+
+      - N8N_RUNNERS_ENABLED=${N8N_RUNNERS_ENABLED}
+
+      - EXECUTIONS_MODE=${EXECUTIONS_MODE}
+      - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST}
+      - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT}
+
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
+      - N8N_TRUST_PROXY=${N8N_TRUST_PROXY}
+
+      - N8N_USER_FOLDER=${N8N_USER_FOLDER}
+      - NODE_FUNCTION_ALLOW_BUILTIN=${NODE_FUNCTION_ALLOW_BUILTIN}
+
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - n8n-network
+      - traefik-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --spider -q http://localhost:5678/healthz || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      # HTTP
+      - "traefik.http.routers.n8n-http.rule=Host(`n8n.chnnlcrypto.cloud`)"
+      - "traefik.http.routers.n8n-http.entrypoints=web"
+      - "traefik.http.routers.n8n-http.middlewares=n8n-redirect"
+      # HTTPS
+      - "traefik.http.routers.n8n-https.rule=Host(`n8n.chnnlcrypto.cloud`)"
+      - "traefik.http.routers.n8n-https.entrypoints=websecure"
+      - "traefik.http.routers.n8n-https.tls=true"
+      - "traefik.http.routers.n8n-https.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.n8n-https.service=n8n-svc"
+      # Middleware redirect
+      - "traefik.http.middlewares.n8n-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.n8n-redirect.redirectscheme.permanent=true"
+      # Service
+      - "traefik.http.services.n8n-svc.loadbalancer.server.port=5678"
+
+  # n8n Worker (pour exécutions parallèles et scaling)
+  n8n-worker:
+    image: docker.n8n.io/n8nio/n8n:1.123.6
+    container_name: n8n-worker
+    restart: unless-stopped
+    command: worker --concurrency=2
+    labels:
+      - "traefik.enable=false"
+    environment:
+      - DB_TYPE=${DB_TYPE}
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT=${DB_POSTGRESDB_PORT}
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
+
+      - N8N_RUNNERS_ENABLED=${N8N_RUNNERS_ENABLED}
+      - EXECUTIONS_MODE=${EXECUTIONS_MODE}
+      - EXECUTIONS_CONCURRENCY=${EXECUTIONS_CONCURRENCY}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+      - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST}
+      - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT}
+      - NODE_FUNCTION_ALLOW_BUILTIN=${NODE_FUNCTION_ALLOW_BUILTIN}
+
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - n8n-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: "6g"
+
+networks:
+  n8n-network:
+    driver: bridge
+  traefik-net:
+    external: true
+
+volumes:
+  n8n-data:
+    driver: local

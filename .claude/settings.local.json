@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker ps:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)",
+      "Bash(openssl rand:*)",
+      "Bash(https://mcp.chnnlcrypto.cloud/health)",
+      "Bash(chmod:*)",
+      "Bash(~/.local/bin/yt-dlp:*)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Bash(yt-dlp:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(command -v:*)",
+      "Bash(~/.local/bin/ffmpeg:*)",
+      "Bash(API_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YzcxNzBlZC1lOGZkLTQzMjYtYWY4OS0zOTM5YWI1YmVmYmIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2MDUzNjYwfQ.skHm5mSo4yukPwnF3MoFH96uUQPn-otoNLH2NobAoLY\")",
+      "Bash(docker-compose exec:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker port:*)",
+      "Bash(docker inspect:*)",
+      "Bash(sudo find:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker run:*)",
+      "Bash(docker.n8n.io/n8nio/n8n:1.76.0)",
+      "Bash(docker.n8n.io/n8nio/n8n:1.92.0)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker network:*)",
+      "Bash(systemctl status:*)",
+      "Bash(nginx -t:*)"
+    ]
+  }
+}

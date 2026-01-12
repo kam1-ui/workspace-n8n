@@ -1,0 +1,30 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "n8n-api-key",
+      "description": "Votre clé API n8n",
+      "password": true
+    }
+  ],
+  "servers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "env": {
+        "N8N_API_URL": "https://n8n.chnnlcrypto.cloud",
+        "N8N_API_KEY": "${input:n8n-api-key}",
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error"
+      }
+    },
+    "sequential-thinking-http": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://127.0.0.1:3101/mcp"
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+✅ Mission accomplie !
+Résumé de la résolution du problème :
+🔍 Diagnostic effectué
+Tests d'authentification : Les deux méthodes (Bearer et X-N8N-API-KEY) retournaient 401
+Analyse JWT : Token valide, créé il y a 22 minutes, pas d'expiration
+Vérification infrastructure :
+Conteneur n8n actif sur 172.18.0.5:5678
+Problème identifié : Traefik gère le reverse proxy (ports 80/443), pas nginx système
+nginx système n'était même pas démarré
+Découverte de l'endpoint correct : /api/v1/workflows au lieu de /rest/workflows
+🎯 Workflow importé avec succès
+Nom : Transcription YouTube - Gemini + Whisper
+ID : R31TqM6ks1cBpLkA
+Version : 58f1c494-b128-48b8-b0b9-e1102ca79c0b
+Statut : Importé et disponible dans n8n
+Date : 2025-12-19 à 03:58:17 UTC
+📝 Points importants
+Endpoint API : Utilisez /api/v1/* au lieu de /rest/*
+Reverse proxy : Traefik gère déjà tout, inutile de configurer nginx système
+Import API : Le JSON doit être nettoyé (seulement name, nodes, connections, settings, staticData)
+Vous pouvez maintenant voir votre workflow dans l'interface n8n à l'adresse https://n8n.chnnlcrypto.cloud !

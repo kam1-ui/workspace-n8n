@@ -1,0 +1,7 @@
+
+
+curl -i -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YzcxNzBlZC1lOGZkLTQzMjYtYWY4OS0zOTM5YWI1YmVmYmIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2MTE0NzE5fQ.MJtR36bxBa4sWRe31fFJLe9w3i44Kw5HFE5knCOi7bg" "https://n8n.chnnlcrypto.cloud/rest/workflows"
+
+
+curl -v -i -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YzcxNzBlZC1lOGZkLTQzMjYtYWY4OS0zOTM5YWI1YmVmYmIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2MTE1NTk1fQ.lTGsQ1-MhJBJwHzCz2a_ERMPLYTezs0c-TmGuc0XzFo" "https://n8n.chnnlcrypto.cloud/rest/workflows"
+

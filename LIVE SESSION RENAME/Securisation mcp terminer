@@ -1,0 +1,36 @@
+✅ Sécurisation MCP terminée !
+🔒 Ce qui a été fait
+Création fichier .env.mcp ✅
+Extraction des secrets depuis docker-compose-mcp.yml
+Permissions 600 (lecture/écriture propriétaire uniquement)
+Modification docker-compose-mcp.yml ✅
+Utilisation de env_file: .env.mcp
+Suppression des secrets en dur
+Protection Git ✅
+Ajout de .env.mcp au .gitignore
+Création de .env.mcp.example (template public)
+Documentation ✅
+Création de SECURITY.md - Guide sécurité complet
+Instructions régénération secrets
+Procédures en cas de fuite
+Test fonctionnel ✅
+MCP redémarré avec nouvelle config
+Health check OK
+Variables d'environnement chargées correctement
+📁 Nouveaux fichiers
+.env.mcp (600) - NE PAS COMMITTER 🔒
+.env.mcp.example - Template public ✅
+SECURITY.md - Documentation sécurité ✅
+🔐 Secrets protégés
+AUTH_TOKEN - Token Bearer MCP
+N8N_API_KEY - Clé API n8n
+N8N_API_URL - URL API n8n
+BASE_URL - URL base MCP
+✅ Checklist sécurité
+ .env.mcp dans .gitignore
+ Permissions 600 sur .env.mcp
+ Aucun secret dans docker-compose-mcp.yml
+ Template .env.mcp.example créé
+ Documentation sécurité créée
+ MCP fonctionne avec nouvelle config
+Votre configuration MCP est maintenant sécurisée ! Les secrets ne seront plus exposés dans Git

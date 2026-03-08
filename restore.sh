@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-WORKSPACE_DIR="/home/ne0rignr/workspace-n8n"
+WORKSPACE_DIR="/root/workspace-n8n"
 BACKUP_BASE_DIR="$WORKSPACE_DIR/backups"
 
 # Vérifier l'argument

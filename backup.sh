@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Configuration
-WORKSPACE_DIR="/home/ne0rignr/workspace-n8n"
+WORKSPACE_DIR="/root/workspace-n8n"
 BACKUP_BASE_DIR="$WORKSPACE_DIR/backups"
 BACKUP_DIR="$BACKUP_BASE_DIR/$(date +%F_%H%M)"
 

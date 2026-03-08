@@ -4,10 +4,11 @@ Script pour mettre à jour les chemins yt-dlp et ffmpeg dans le workflow n8n
 """
 import requests
 import json
+import os
 
 # Configuration
 N8N_API_URL = "https://n8n.chnnlcrypto.cloud/api/v1"
-N8N_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YzcxNzBlZC1lOGZkLTQzMjYtYWY4OS0zOTM5YWI1YmVmYmIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2MjI2Mzc0LCJleHAiOjE3NzM5NzkyMDB9.3yeTcLrbcdS87W8yWhvlU_10NnmV1O8n90tj06l3OJM"
+N8N_API_KEY = os.getenv("N8N_API_KEY", "")
 WORKFLOW_ID = "YZjpaE2KW9BJvzYR"
 
 # Headers

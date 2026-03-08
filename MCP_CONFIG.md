@@ -16,12 +16,12 @@ Le serveur MCP HTTP est déployé et accessible pour contrôler n8n via le Model
 
 ### Token MCP (Bearer)
 ```
-uiwEpWqabpbtxe0JIppAIMfRUXUmeSV3FZVSqIZogc4=
+<VOTRE_AUTH_TOKEN>
 ```
 
 ### Clé API n8n
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YzcxNzBlZC1lOGZkLTQzMjYtYWY4OS0zOTM5YWI1YmVmYmIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY2MTE0NzE5fQ.MJtR36bxBa4sWRe31fFJLe9w3i44Kw5HFE5knCOi7bg
+<VOTRE_N8N_API_KEY>
 ```
 
 ## 🐳 Gestion Docker
@@ -51,13 +51,13 @@ docker restart n8n-mcp-server
 
 ### Health check
 ```bash
-curl -H "Authorization: Bearer uiwEpWqabpbtxe0JIppAIMfRUXUmeSV3FZVSqIZogc4=" \
+curl -H "Authorization: Bearer <VOTRE_AUTH_TOKEN>" \
   https://mcp.chnnlcrypto.cloud/health
 ```
 
 ### Liste des workflows n8n
 ```bash
-curl -H "X-N8N-API-KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+curl -H "X-N8N-API-KEY: <VOTRE_N8N_API_KEY>" \
   https://n8n.chnnlcrypto.cloud/api/v1/workflows
 ```
 
@@ -75,7 +75,7 @@ Fichier : `.vscode/settings.json`
         "mcp-remote",
         "https://mcp.chnnlcrypto.cloud/mcp",
         "--header",
-        "Authorization: Bearer uiwEpWqabpbtxe0JIppAIMfRUXUmeSV3FZVSqIZogc4="
+        "Authorization: Bearer <VOTRE_AUTH_TOKEN>"
       ]
     }
   }
@@ -110,14 +110,14 @@ TTL: 300s
 ```env
 MCP_MODE=http
 USE_FIXED_HTTP=true
-AUTH_TOKEN=uiwEpWqabpbtxe0JIppAIMfRUXUmeSV3FZVSqIZogc4=
+AUTH_TOKEN=<VOTRE_AUTH_TOKEN>
 PORT=3000
 HOST=0.0.0.0
 LOG_LEVEL=info
 TRUST_PROXY=1
 BASE_URL=https://mcp.chnnlcrypto.cloud
 N8N_API_URL=https://n8n.chnnlcrypto.cloud
-N8N_API_KEY=[clé ci-dessus]
+N8N_API_KEY=<VOTRE_N8N_API_KEY>
 ```
 
 ## 🏗️ Infrastructure
@@ -131,6 +131,8 @@ Nginx (ports 80/443)
     ├── n8n.chnnlcrypto.cloud → 127.0.0.1:5678 (n8n Docker)
     └── mcp.chnnlcrypto.cloud → 127.0.0.1:3000 (MCP Docker)
 ```
+
+Architecture: Nginx (système) → conteneurs Docker.
 
 ### Composants
 
@@ -171,7 +173,7 @@ curl https://mcp.chnnlcrypto.cloud/health
 
 ### Liste des outils MCP
 ```bash
-curl -H "Authorization: Bearer uiwEpWqabpbtxe0JIppAIMfRUXUmeSV3FZVSqIZogc4=" \
+curl -H "Authorization: Bearer <VOTRE_AUTH_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
   https://mcp.chnnlcrypto.cloud/mcp

@@ -18,8 +18,14 @@ Instance n8n avec support MCP (Model Context Protocol) pour contrôle via Claude
 ## Démarrage rapide
 
 ```bash
-cd /home/ne0rignr/workspace-n8n
-docker-compose up -d
+# 1) Infrastructure partagee (PostgreSQL + Redis)
+cd /root && docker compose up -d
+
+# 2) n8n (main + worker)
+cd /root/workspace-n8n && docker compose up -d
+
+# 3) MCP
+cd /root/workspace-n8n && docker compose -f docker-compose-mcp.yml up -d
 ```
 
 ## Gestion des services
@@ -185,12 +191,16 @@ Voir [MCP_CONFIG.md](MCP_CONFIG.md) pour la configuration détaillée.
 ```
 Internet (HTTPS)
     ↓
-Nginx (ports 80/443) - SSL Let's Encrypt
+Nginx systeme (ports 80/443) - SSL Let's Encrypt
+  ├── Infrastructure partagee: /root/docker-compose.yml
+  │   ├── PostgreSQL 15
+  │   └── Redis 7
+  ├── n8n stack: /root/workspace-n8n/docker-compose.yml
     ├── n8n.chnnlcrypto.cloud → 127.0.0.1:5678 (n8n Docker)
     │   ├── n8n-main (queue mode)
     │   ├── n8n-worker (concurrency: 2)
-    │   ├── PostgreSQL 15
-    │   └── Redis 7
+  │   └── utilise PostgreSQL + Redis partages
+  └── MCP stack: /root/workspace-n8n/docker-compose-mcp.yml
     └── mcp.chnnlcrypto.cloud → 127.0.0.1:3000 (MCP Docker)
         └── n8n API (17 outils)
 ```

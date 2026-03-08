@@ -5,6 +5,12 @@
       "id": "n8n-api-key",
       "description": "Votre clé API n8n",
       "password": true
+    },
+    {
+      "type": "promptString",
+      "id": "hostinger-api-token",
+      "description": "Votre token API Hostinger",
+      "password": true
     }
   ],
   "servers": {
@@ -25,6 +31,16 @@
         "mcp-remote",
         "http://127.0.0.1:3101/mcp"
       ]
+    },
+    "hostinger": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@hostinger/api-mcp-server"
+      ],
+      "env": {
+        "HOSTINGER_API_TOKEN": "${input:hostinger-api-token}"
+      }
     }
   }
 }

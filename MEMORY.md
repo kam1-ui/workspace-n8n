@@ -57,13 +57,13 @@
 | Dev | voice-to-text-web, devcontainer, influxdb, redis | — |
 | Ollama | systemd (pas Docker) port 11434 | host direct |
 
-### MCP sur le VPS (accessibles par Gwen)
+### MCP sur le VPS (accessibles par Claude CLI VPS)
 - **n8n MCP** : https://mcp.chnnlcrypto.cloud/mcp (17 outils, Bearer token)
 - **Firecrawl MCP** : /mcp/sse interne (10 outils : scrape, crawl, extract, knowledge)
 - **Ollama** : localhost:11434 (modèles qwen3:8b, nomic-embed-text)
 - **Knowledge API** : localhost:8001 (search/ingest Qdrant)
 
-### Gwen = Claude Code CLI v2.1.71 sur le VPS
+### Claude CLI VPS = Claude Code CLI v2.1.71 sur le VPS
 - **Accès** : via VS Code Remote-SSH depuis le PC Windows
 - **Équipé de** : n8n-skills (7), CLAUDE.md (règles n8n), hostinger-mcp, n8n MCP, Firecrawl MCP
 - Accès direct : n8n API, Docker, nginx, certbot, fichiers /root/projects/
@@ -71,7 +71,7 @@
 
 ### Ollama (service séparé sur le VPS)
 - **Modèles** : qwen3:8b, nomic-embed-text
-- **Rôle** : LLM local utilisé par Firecrawl et n8n pour les tâches locales (pas Gwen)
+- **Rôle** : LLM local utilisé par Firecrawl et n8n pour les tâches locales (pas Claude CLI VPS)
 - **Port** : localhost:11434
 
 ### Alertes
